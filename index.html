@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>자리 배치 랜덤 생성기</title>
+<style>
+  body { font-family: Arial; text-align: center; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(6, 100px);
+    gap: 10px;
+    justify-content: center;
+    margin-top: 30px;
+  }
+  .seat {
+    border: 2px solid #ccc;
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    background: #f9f9f9;
+  }
+  .fixed { background: #ffd54f; }
+  .excluded { background: #ddd; }
+</style>
+</head>
+<body>
+
+<h2>자리 배치 랜덤 생성기</h2>
+<button onclick="shuffle()">무작위 배치</button>
+<button onclick="resetSeats()">초기화</button>
+
+<div class="grid" id="grid"></div>
+
+<script>
+const students = Array.from({ length: 28 }, (_, i) => "학생 " + (i + 1));
+
+const rows = 5;
+const cols = 6;
+
+let seats = [];
+
+function init() {
+  seats = [];
+  for (let i = 0; i < rows * cols; i++) {
+    let r = Math.floor(i / cols);
+    let c = i % cols;
+
+    let isExcluded = (r === rows - 1 && (c === 0 || c === 1));
+
+    seats.push({
+      id: i,
+      student: null,
+      fixed: false,
+      excluded: isExcluded
+    });
+  }
+  render();
+}
+
+function shuffle() {
+  let available = students.slice();
+
+  // fixed 학생 제외
+  seats.forEach(s => {
+    if (s.fixed && s.student) {
+      available = available.filter(x => x !== s.student);
+    }
+  });
+
+  // shuffle
+  available.sort(() => Math.random() - 0.5);
+
+  let idx = 0;
+
+  seats.forEach(s => {
+    if (!s.fixed && !s.excluded) {
+      s.student = available[idx++] || null;
+    }
+  });
+
+  render();
+}
+
+function toggleFixed(index) {
+  if (seats[index].student) {
+    seats[index].fixed = !seats[index].fixed;
+    render();
+  }
+}
+
+function resetSeats() {
+  seats.forEach(s => {
+    if (!s.excluded) {
+      s.student = null;
+      s.fixed = false;
+    }
+  });
+  render();
+}
+
+function render() {
+  const grid = document.getElementById("grid");
+  grid.innerHTML = "";
+
+  seats.forEach((s, i) => {
+    let div = document.createElement("div");
+    div.className = "seat";
+
+    if (s.excluded) div.classList.add("excluded");
+    if (s.fixed) div.classList.add("fixed");
+
+    div.innerText = s.excluded ? "사용 안함" : (s.student || "빈자리");
+
+    div.onclick = () => toggleFixed(i);
+
+    grid.appendChild(div);
+  });
+}
+
+init();
+</script>
+
+</body>
+</html>
